@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import aiofiles
 from httpx import AsyncClient
@@ -11,7 +11,7 @@ from lxml import etree
 from lxml.cssselect import CSSSelector
 from mediasub import LastPullContext, PullSource
 
-from environment import FLARESOLVERR_HOST, FLARESOLVERR_PORT
+import flaresolverr_helper
 
 if TYPE_CHECKING:
     from lxml.etree import _Element as Element  # pyright: ignore[reportPrivateUsage]
@@ -43,24 +43,18 @@ class Chapter:
 
 class MangaMoinsSource(PullSource[Chapter]):
     name = "MangaMoins"
-    timeout = 600
+    default_timeout = 600
+
+    def __init__(self, shared_client: bool = False, timeout: int | None = None):
+        super().__init__(shared_client=shared_client, timeout=timeout)
+        self.cookies: list[dict[str, Any]] = []
+        self.user_agent: str | None = None
 
     async def pull(self, last_pull_ctx: LastPullContext | None = None) -> set[Chapter]:
         url = "https://mangamoins.shaeishu.co/"
-        headers = {"Content-Type": "application/json"}
-        data = {
-            "session": "mangamoins",
-            "cmd": "request.get",
-            "url": url,
-            "maxTimeout": 60000
-        }
-        raw_response = await self.client.post(f"http://{FLARESOLVERR_HOST}:{FLARESOLVERR_PORT}/v1", headers=headers, json=data, timeout=70)
-        response = raw_response.json()
-        if response["status"] != "ok":
-            print("Challenge not solved for some reasons")
-            raise Exception
+        response = await flaresolverr_helper.get(url, "mangamoins", self.client)
 
-        parsed = etree.fromstring(response["solution"]["response"], parser=etree.HTMLParser())
+        parsed = etree.fromstring(response["response"], parser=etree.HTMLParser())
         selector = CSSSelector(".sortie")
         selected = selector(parsed)
 
@@ -92,23 +86,23 @@ class MangaMoinsSource(PullSource[Chapter]):
 
             chapters.add(chapter_obj)
 
-        print(chapters)
-
         return chapters
 
 
-async def download_chapter(client: AsyncClient, chapter: Chapter, path: Path | None = None) -> None:
+async def download_chapter(
+    client: AsyncClient,
+    chapter: Chapter,
+    path: Path,
+) -> None:
     """
     Download the chapter and save it to a file.
     """
     print(f"Downloading {chapter.manga} ({chapter.code}) - Chapter {chapter.chapter}...")
     url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
+
     response = await client.get(url, timeout=60)
     if response.status_code != 200:
         raise ValueError(f"Failed to download chapter {chapter}: {response.status_code}")
-
-    if path is None:
-        path = Path(".") / "downloads" / chapter.manga / f"c{chapter.chapter}.cbz"
 
     path.parent.mkdir(parents=True, exist_ok=True)
     async with aiofiles.open(path, "wb") as f:
