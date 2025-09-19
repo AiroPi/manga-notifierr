@@ -1,0 +1,19 @@
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+
+  manganotifierr:
+    build: .
+    image: ghcr.io/airopi/manganotifierr:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    environment:
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
+      # FLARESOLVERR_HOST: "flaresolverr"
+      # FLARESOLVERR_PORT: 8191
+      # LIBRARY_PATH: "/data/library"
+      # DOWNLOADS_PATH: "/data/downloads"
+      # DATABASE_PATH: "/data/db.sqlite"
+
