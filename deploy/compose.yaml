@@ -2,12 +2,25 @@ services:
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:8191"]
+      interval: 30s
+      retries: 5
+      start_period: 3s
+      timeout: 10s
+
 
   manganotifierr:
     image: ghcr.io/airopi/manga-notifierr:master
     restart: unless-stopped
+    tty: true  # todo: use logger so logs are flushed directly
+    init: true
     volumes:
       - ./data:/data
+    depends_on:
+      flaresolverr:
+        condition: service_healthy
+        restart: true
     environment:
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
       FLARESOLVERR_HOST: ${FLARESOLVERR_HOST:-flaresolverr}
@@ -15,4 +28,3 @@ services:
       LIBRARY_PATH: ${LIBRARY_PATH:-/data/library}
       DOWNLOADS_PATH: ${DOWNLOADS_PATH:-/data/downloads}
       DATABASE_PATH: ${DATABASE_PATH:-/data/db.sqlite}
-
