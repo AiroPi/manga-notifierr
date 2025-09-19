@@ -5,7 +5,7 @@ import aiofiles
 from httpx import AsyncClient
 from mediasub import LastPullContext, PullSource
 
-FILTER = {"Berserk", "Kingdom"}
+FILTER = {"Berserk", "Kingdom", "Vinland Saga"}
 
 BASE_URL = "https://fmteam.fr"
 
