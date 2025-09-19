@@ -1,0 +1,18 @@
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+
+  manganotifierr:
+    image: ghcr.io/airopi/manga-notifierr:master
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    environment:
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
+      FLARESOLVERR_HOST: ${FLARESOLVERR_HOST:-flaresolverr}
+      FLARESOLVERR_PORT: ${FLARESOLVERR_PORT:-8191}
+      LIBRARY_PATH: ${LIBRARY_PATH:-/data/library}
+      DOWNLOADS_PATH: ${DOWNLOADS_PATH:-/data/downloads}
+      DATABASE_PATH: ${DATABASE_PATH:-/data/db.sqlite}
+
