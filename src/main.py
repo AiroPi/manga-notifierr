@@ -11,6 +11,7 @@ from media_sources.mangamoins import (
     MangaMoinsSource,
     download_chapter as mangamoins_download_chapter,
 )
+from media_sources.mangaplus import Chapter as MangaPlusChapter, MangaPlusSource
 from notifier import notify
 
 media = MediaSub(
@@ -35,7 +36,7 @@ async def on_fmteam_chapter(src: FMTeamSource, chapter: FMTeamChapter):
 
 
 @media.sub_to(MangaMoinsSource())
-async def on_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapter):
+async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapter):
     print(f"New chapter available: {chapter.manga} - {chapter.chapter}")
     await notify(
         f"Nouveau chapitre de {chapter.manga} : {chapter.chapter}\nLisez-le sur https://mangamoins.shaeishu.co/"
@@ -53,6 +54,14 @@ async def on_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapter):
         client.headers["user-agent"] = src.user_agent
 
     await mangamoins_download_chapter(client, chapter, path=path)
+
+
+@media.sub_to(MangaPlusSource([700014]))
+async def on_mangaplus_chapter(src: MangaPlusSource, chapter: MangaPlusChapter):
+    print(f"New chapter available: {chapter.manga} - {chapter.title}")
+    await notify(
+        f"Nouveau chapitre de {chapter.manga} : {chapter.title}\nLisez-le sur https://mangaplus.shueisha.co.jp/"
+    )
 
 
 if __name__ == "__main__":

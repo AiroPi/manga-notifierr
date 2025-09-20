@@ -11,6 +11,7 @@ dependencies = [
     "lxml",
     "cssselect",
     "aiofiles",
+    "protobuf~=3.6",
 ]
 
 [dependency-groups]
