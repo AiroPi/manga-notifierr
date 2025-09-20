@@ -56,7 +56,14 @@ async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapte
     await mangamoins_download_chapter(client, chapter, path=path)
 
 
-@media.sub_to(MangaPlusSource([700014]))
+@media.sub_to(
+    MangaPlusSource(
+        [
+            700014,  # Boruto : TWO BLUE VORTEX
+            700006,  # Black Clover
+        ]
+    )
+)
 async def on_mangaplus_chapter(src: MangaPlusSource, chapter: MangaPlusChapter):
     print(f"New chapter available: {chapter.manga} - {chapter.title}")
     await notify(
