@@ -247,8 +247,8 @@ wheels = [
 
 [[package]]
 name = "mediasub"
-version = "2.0.0b3"
-source = { git = "https://github.com/AiroPi/mediasub.git?branch=master#bc49466d389c0f31a8c63d59feee7e057e784433" }
+version = "2.0.0b4"
+source = { git = "https://github.com/AiroPi/mediasub.git?branch=master#1b03a50a2d6762b8e8454d579849643c6f9b2f42" }
 dependencies = [
     { name = "aiosqlite" },
     { name = "httpx" },
@@ -353,7 +353,7 @@ wheels = [
 
 [[package]]
 name = "typer"
-version = "0.18.0"
+version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -361,9 +361,9 @@ dependencies = [
     { name = "shellingham" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/73/f2/8214025e8fd1ada825d1b2183bd5895148b42b88ffe3ea3eed1224568ed0/typer-0.18.0.tar.gz", hash = "sha256:342049be1a608c972b0f77dd2b2573e74366b83465cfd5ebd3fede187e1f885e", size = 103878 }
+sdist = { url = "https://files.pythonhosted.org/packages/03/ea/9cc57c3c627fd7a6a0907ea371019fe74c3ec00e3cf209a6864140a602ad/typer-0.19.1.tar.gz", hash = "sha256:cb881433a4b15dacc875bb0583d1a61e78497806741f9aba792abcab390c03e6", size = 104802 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/cc/c476930fbb1649658cb2195144dac1a9899e474bb6433bf35bf37b6946cb/typer-0.18.0-py3-none-any.whl", hash = "sha256:e0f91cc4bc0761f739c74ffd92aab3c8df279c4cab271b0dba1f302afa0b5a84", size = 46753 },
+    { url = "https://files.pythonhosted.org/packages/1e/fa/6473c00b5eb26a2ba427813107699d3e6f4e1a4afad3f7494b17bdef3422/typer-0.19.1-py3-none-any.whl", hash = "sha256:914b2b39a1da4bafca5f30637ca26fa622a5bf9f515e5fdc772439f306d5682a", size = 46876 },
 ]
 
 [[package]]

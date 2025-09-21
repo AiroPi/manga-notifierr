@@ -1,12 +1,14 @@
 from dataclasses import dataclass
+from logging import getLogger
 from pathlib import Path
 
 import aiofiles
 from httpx import AsyncClient
 from mediasub import LastPullContext, PullSource
 
-FILTER = {"Berserk", "Kingdom", "Vinland Saga"}
+logger = getLogger(__name__)
 
+FILTER = {"Berserk", "Kingdom", "Vinland Saga"}
 BASE_URL = "https://fmteam.fr"
 
 
@@ -36,17 +38,15 @@ class FMTeamSource(PullSource[Chapter]):
 
         content = response.json()
 
-        # with open("fmteam_comics.json", "w") as f:
-        #     json.dump(content, f, indent=4)
-
         chapters: set[Chapter] = set()
         for manga in content["comics"]:
             if manga["title"] not in FILTER:
+                logger.debug(f"Skipped manga {manga['title']}.")
                 continue
 
             last_chapter = manga["last_chapter"]
             if last_chapter is None:
-                print(f"No last chapter found for {manga['name']}")
+                logger.warning(f"No last chapter found for {manga['name']}")
                 continue
 
             chapter_nb = last_chapter["chapter"]
@@ -61,10 +61,15 @@ class FMTeamSource(PullSource[Chapter]):
             )
 
             chapters.add(chapter)
+
+        _log_chapters = "\n - ".join(f"{chapter.manga} : #{chapter.chapter} {chapter.title}" for chapter in chapters)
+        logger.info(f"Found {len(chapters)} chapters:\n - {_log_chapters}")
+
         return chapters
 
 
 async def download_chapter(client: AsyncClient, chapter: Chapter, path: Path | None = None):
+    logger.info(f"Downloading {chapter.manga} : #{chapter.chapter} {chapter.title} in {path}...")
     url = f"{BASE_URL}/api{chapter.chapter_download}"
 
     response = await client.get(url, timeout=60)
@@ -77,3 +82,4 @@ async def download_chapter(client: AsyncClient, chapter: Chapter, path: Path | N
 
     async with aiofiles.open(path, "wb") as f:
         await f.write(response.content)
+    logger.info(f"{chapter.manga} : #{chapter.chapter} {chapter.title} downloaded in {path} successfully !")

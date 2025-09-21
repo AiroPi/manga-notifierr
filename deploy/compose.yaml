@@ -13,7 +13,6 @@ services:
   manganotifierr:
     image: ghcr.io/airopi/manga-notifierr:master
     restart: unless-stopped
-    tty: true  # todo: use logger so logs are flushed directly
     init: true
     volumes:
       - ./data:/data

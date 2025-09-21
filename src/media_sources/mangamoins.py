@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -15,6 +16,8 @@ import flaresolverr_helper
 
 if TYPE_CHECKING:
     from lxml.etree import _Element as Element  # pyright: ignore[reportPrivateUsage]
+
+logger = getLogger(__name__)
 
 SCAN_REF_RE = re.compile(r"(\D+)(.+)")
 
@@ -65,7 +68,7 @@ class MangaMoinsSource(PullSource[Chapter]):
         for chapter_div in selected:
             a_element = chapter_div.find("a")
             if a_element is None:
-                print("No <a> element found in chapter_div")
+                logger.warning("No <a> element found in chapter_div")
                 continue
             href = a_element.attrib["href"]
 
@@ -75,7 +78,7 @@ class MangaMoinsSource(PullSource[Chapter]):
 
             match = SCAN_REF_RE.match(scan_ref)
             if match is None:
-                print(f"No match found for scan_ref: {scan_ref}")
+                logger.warning(f"No match found for scan_ref: {scan_ref}")
                 continue
 
             code, chapter = match.groups()
@@ -85,6 +88,9 @@ class MangaMoinsSource(PullSource[Chapter]):
             chapter_obj = Chapter(code=code, chapter=chapter)
 
             chapters.add(chapter_obj)
+
+        _log_chapters = "\n - ".join(f"{chapter.manga} #{chapter.chapter}" for chapter in chapters)
+        logger.info(f"Found {len(chapters)} chapters:\n - {_log_chapters}")
 
         return chapters
 
@@ -97,7 +103,7 @@ async def download_chapter(
     """
     Download the chapter and save it to a file.
     """
-    print(f"Downloading {chapter.manga} ({chapter.code}) - Chapter {chapter.chapter}...")
+    logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
     url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
 
     response = await client.get(url, timeout=60)
@@ -108,4 +114,4 @@ async def download_chapter(
     async with aiofiles.open(path, "wb") as f:
         await f.write(response.content)
 
-    print(f"Downloaded {path}")
+    logger.info(f"{chapter.manga} #{chapter.chapter} downloaded in {path} successfully !")

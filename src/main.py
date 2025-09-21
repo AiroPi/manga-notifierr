@@ -1,9 +1,11 @@
 import asyncio
+import logging
 from pathlib import Path
 
 import httpx
 from mediasub import MediaSub
 
+from _logger import setup_logger
 from environment import DATABASE_PATH, LIBRARY_PATH
 from media_sources.fmteam import Chapter as FMTeamChapter, FMTeamSource, download_chapter as fmteam_download_chapter
 from media_sources.mangamoins import (
@@ -13,6 +15,8 @@ from media_sources.mangamoins import (
 )
 from media_sources.mangaplus import Chapter as MangaPlusChapter, MangaPlusSource
 from notifier import notify_new_chapter
+
+setup_logger(levels={"httpx": logging.WARNING})
 
 media = MediaSub(
     db_path=DATABASE_PATH,

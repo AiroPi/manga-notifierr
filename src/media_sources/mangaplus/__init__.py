@@ -1,11 +1,15 @@
 # heavily inspired by https://github.com/hurlenko/mloader
 
 from dataclasses import dataclass
+from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 from mediasub import LastPullContext, PullSource
 
 from .response_pb2 import Response
+
+logger = getLogger(__name__)
+
 
 if TYPE_CHECKING:
     Response: Any
@@ -42,7 +46,6 @@ class MangaPlusSource(PullSource[Chapter]):
             manga = Response.FromString(response.content).success.title_detail_view
             for group in manga.chapter_list_group:
                 for chapter in group.last_chapter_list:
-                    print(chapter)
                     chapter = Chapter(
                         title=chapter.sub_title,
                         manga=manga.title.name,
@@ -50,6 +53,9 @@ class MangaPlusSource(PullSource[Chapter]):
                         chapter_id=chapter.chapter_id,
                     )
                     chapters.add(chapter)
+
+        _log_chapters = "\n - ".join(f"{chapter.manga} : {chapter.title}" for chapter in chapters)
+        logger.info(f"Found {len(chapters)} chapters:\n - {_log_chapters}")
 
         return chapters
 

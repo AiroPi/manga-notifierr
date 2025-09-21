@@ -90,6 +90,7 @@ ignore = [
     "PIE796", # Enum contains duplicate value
     "TRY003", # Avoid specifying long messages outsides the exception class
     "ISC001", # To avoid conflicts with the formatter
+    "G004",   # logging f-string
 ]
 dummy-variable-rgx = '^\*{0,2}(_$|__$|unused_|dummy_)'
 
