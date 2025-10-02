@@ -46,7 +46,7 @@ class Chapter:
 
 class MangaMoinsSource(PullSource[Chapter]):
     name = "MangaMoins"
-    default_timeout = 600
+    default_timeout = 1200
 
     def __init__(self, shared_client: bool = False, timeout: int | None = None):
         super().__init__(shared_client=shared_client, timeout=timeout)
@@ -94,6 +94,9 @@ class MangaMoinsSource(PullSource[Chapter]):
 
         return chapters
 
+    async def post_handlers(self):
+        await flaresolverr_helper.destroy_session("mangamoins", self.client)
+
 
 async def download_chapter(
     client: AsyncClient,
@@ -106,7 +109,7 @@ async def download_chapter(
     logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
     url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
 
-    response = await client.get(url, timeout=60)
+    response = await client.get(url, timeout=60, follow_redirects=True)
     if response.status_code != 200:
         raise ValueError(f"Failed to download chapter {chapter}: {response.status_code}")
 

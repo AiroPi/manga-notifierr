@@ -32,3 +32,12 @@ async def get(url: str, session: str, client: httpx.AsyncClient | None = None) -
         raise FlareSolverrError("Challenge not solved for some reasons")
 
     return response["solution"]
+
+
+async def destroy_session(session: str, client: httpx.AsyncClient | None = None):
+    if client is None:
+        client = httpx.AsyncClient()
+
+    headers = {"Content-Type": "application/json"}
+    data = {"session": session, "cmd": "sessions.destroy"}
+    await client.post(f"http://{FLARESOLVERR_HOST}:{FLARESOLVERR_PORT}/v1", headers=headers, json=data)
