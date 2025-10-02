@@ -94,7 +94,7 @@ class MangaMoinsSource(PullSource[Chapter]):
 
         return chapters
 
-    async def post_handlers(self):
+    async def post_callback(self):
         await flaresolverr_helper.destroy_session("mangamoins", self.client)
 
 

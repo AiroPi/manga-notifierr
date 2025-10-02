@@ -266,7 +266,7 @@ wheels = [
 [[package]]
 name = "mediasub"
 version = "2.0.0b5"
-source = { git = "https://github.com/AiroPi/mediasub.git?branch=master#c256d2805f73a76cfcc1e887162f10c72393398c" }
+source = { git = "https://github.com/AiroPi/mediasub.git?branch=master#113eb31db90c0aa8fddf08dca5944aaf2d1a8da0" }
 dependencies = [
     { name = "aiosqlite" },
     { name = "httpx" },
