@@ -55,7 +55,7 @@ async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapte
     await notify_new_chapter(
         manga=chapter.manga,
         chapter=chapter.chapter,
-        url=f"https://mangamoins.shaeishu.co/?scan={chapter.code}{chapter.chapter}",
+        url=f"https://mangamoins.com/?scan={chapter.code}{chapter.chapter}",
         extra_pings=pings.get(chapter.code),
     )
 

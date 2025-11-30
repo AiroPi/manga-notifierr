@@ -54,7 +54,7 @@ class MangaMoinsSource(PullSource[Chapter]):
         self.user_agent: str | None = None
 
     async def pull(self, last_pull_ctx: LastPullContext | None = None) -> set[Chapter]:
-        url = "https://mangamoins.shaeishu.co/"
+        url = "https://mangamoins.com/"
         response = await flaresolverr_helper.get(url, "mangamoins", self.client)
 
         parsed = etree.fromstring(response["response"], parser=etree.HTMLParser())
@@ -108,7 +108,7 @@ class MangaMoinsSource(PullSource[Chapter]):
         Download the chapter and save it to a file.
         """
         logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
-        url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
+        url = f"https://mangamoins.com/download/?scan={chapter.code}{chapter.chapter}"
 
         client = AsyncClient()
         if cookies:
