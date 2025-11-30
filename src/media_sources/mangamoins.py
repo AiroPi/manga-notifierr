@@ -97,24 +97,31 @@ class MangaMoinsSource(PullSource[Chapter]):
     async def post_callback(self):
         await flaresolverr_helper.destroy_session("mangamoins", self.client)
 
+    async def download_chapter(
+        self,
+        chapter: Chapter,
+        path: Path,
+        cookies: dict[str, str] | None = None,
+        user_agent: str | None = None,
+    ) -> None:
+        """
+        Download the chapter and save it to a file.
+        """
+        logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
+        url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
 
-async def download_chapter(
-    client: AsyncClient,
-    chapter: Chapter,
-    path: Path,
-) -> None:
-    """
-    Download the chapter and save it to a file.
-    """
-    logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
-    url = f"https://mangamoins.shaeishu.co/download/?scan={chapter.code}{chapter.chapter}"
+        client = AsyncClient()
+        if cookies:
+            client.cookies = cookies
+        if user_agent:
+            client.headers["user-agent"] = user_agent
 
-    response = await client.get(url, timeout=60, follow_redirects=True)
-    if response.status_code != 200:
-        raise ValueError(f"Failed to download chapter {chapter}: {response.status_code}")
+        response = await client.get(url, timeout=60, follow_redirects=True)
+        if response.status_code != 200:
+            raise ValueError(f"Failed to download chapter {chapter}: {response.status_code}")
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    async with aiofiles.open(path, "wb") as f:
-        await f.write(response.content)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        async with aiofiles.open(path, "wb") as f:
+            await f.write(response.content)
 
-    logger.info(f"{chapter.manga} #{chapter.chapter} downloaded in {path} successfully !")
+        logger.info(f"{chapter.manga} #{chapter.chapter} downloaded in {path} successfully !")

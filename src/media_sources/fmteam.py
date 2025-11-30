@@ -3,7 +3,6 @@ from logging import getLogger
 from pathlib import Path
 
 import aiofiles
-from httpx import AsyncClient
 from mediasub import LastPullContext, PullSource
 
 logger = getLogger(__name__)
@@ -67,19 +66,16 @@ class FMTeamSource(PullSource[Chapter]):
 
         return chapters
 
+    async def download_chapter(self, chapter: Chapter, path: Path):
+        logger.info(f"Downloading {chapter.manga} : #{chapter.chapter} {chapter.title} in {path}...")
+        url = f"{BASE_URL}/api{chapter.chapter_download}"
 
-async def download_chapter(client: AsyncClient, chapter: Chapter, path: Path | None = None):
-    logger.info(f"Downloading {chapter.manga} : #{chapter.chapter} {chapter.title} in {path}...")
-    url = f"{BASE_URL}/api{chapter.chapter_download}"
+        response = await self.client.get(url, timeout=60)
+        if response.status_code != 200:
+            raise ValueError(f"Failed to download chapter {chapter.chapter}: {response.status_code}")
 
-    response = await client.get(url, timeout=60)
-    if response.status_code != 200:
-        raise ValueError(f"Failed to download chapter {chapter.chapter}: {response.status_code}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        async with aiofiles.open(path, "wb") as f:
+            await f.write(response.content)
 
-    if path is None:
-        path = Path(".") / "downloads" / chapter.manga / f"c{chapter.chapter}.cbz"
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    async with aiofiles.open(path, "wb") as f:
-        await f.write(response.content)
-    logger.info(f"{chapter.manga} : #{chapter.chapter} {chapter.title} downloaded in {path} successfully !")
+        logger.info(f"{chapter.manga} : #{chapter.chapter} {chapter.title} downloaded in {path} successfully !")

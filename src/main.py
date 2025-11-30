@@ -1,17 +1,14 @@
 import asyncio
 import logging
-from pathlib import Path
 
-import httpx
 from mediasub import MediaSub
 
 from _logger import setup_logger
 from environment import DATABASE_PATH, LIBRARY_PATH
-from media_sources.fmteam import Chapter as FMTeamChapter, FMTeamSource, download_chapter as fmteam_download_chapter
+from media_sources.fmteam import Chapter as FMTeamChapter, FMTeamSource
 from media_sources.mangamoins import (
     Chapter as MangaMoinsChapter,
     MangaMoinsSource,
-    download_chapter as mangamoins_download_chapter,
 )
 from media_sources.mangaplus import Chapter as MangaPlusChapter, MangaPlusSource
 from notifier import notify_new_chapter
@@ -36,16 +33,16 @@ async def on_fmteam_chapter(src: FMTeamSource, chapter: FMTeamChapter):
         manga=chapter.manga,
         chapter=f"{chapter.chapter} - {chapter.title}",
         url="https://fmteam.fr/",
-        ping=[pings[chapter.manga]],
+        extra_pings=pings.get(chapter.manga),
     )
 
-    path = Path("./library") / chapter.manga / f"c{chapter.chapter}.cbz"
+    path = LIBRARY_PATH / chapter.manga / f"c{chapter.chapter}.cbz"
 
     if path.exists():
         print(f"Chapter {chapter.chapter} already exists in {path}. Skipping download.")
         return
 
-    await fmteam_download_chapter(src.client, chapter, path=path)
+    await src.download_chapter(chapter, path=path)
 
 
 @media.sub_to(MangaMoinsSource())
@@ -59,7 +56,7 @@ async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapte
         manga=chapter.manga,
         chapter=chapter.chapter,
         url=f"https://mangamoins.shaeishu.co/?scan={chapter.code}{chapter.chapter}",
-        ping=[pings[chapter.code]],
+        extra_pings=pings.get(chapter.code),
     )
 
     path = LIBRARY_PATH / chapter.manga / f"c{chapter.chapter}.cbz"
@@ -68,13 +65,12 @@ async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapte
         print(f"Chapter {chapter.chapter} already exists in {path}. Skipping download.")
         return
 
-    client = httpx.AsyncClient()
-    if src.cookies:
-        client.cookies = {c["name"]: c["value"] for c in src.cookies}
-    if src.user_agent:
-        client.headers["user-agent"] = src.user_agent
-
-    await mangamoins_download_chapter(client, chapter, path=path)
+    await src.download_chapter(
+        chapter,
+        path=path,
+        cookies={c["name"]: c["value"] for c in src.cookies},
+        user_agent=src.user_agent,
+    )
 
 
 @media.sub_to(
@@ -96,7 +92,7 @@ async def on_mangaplus_chapter(src: MangaPlusSource, chapter: MangaPlusChapter):
         manga=chapter.manga,
         chapter=chapter.title,
         url=f"https://mangaplus.shueisha.co.jp/viewer/{chapter.chapter_id}",
-        ping=[pings[chapter.manga_id]],
+        extra_pings=pings.get(chapter.manga_id),
     )
 
 
