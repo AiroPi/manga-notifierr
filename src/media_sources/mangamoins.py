@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
+import zipfile
 
 import aiofiles
 from httpx import AsyncClient
@@ -19,26 +20,17 @@ if TYPE_CHECKING:
 
 logger = getLogger(__name__)
 
-SCAN_REF_RE = re.compile(r"(\D+)(.+)")
-
-# also used as filter
-CODE2NAME = {
-    "OP": "One Piece",
-}
-
 
 @dataclass
 class Chapter:
     code: str
     chapter: str
-
-    @property
-    def manga(self) -> str:
-        return CODE2NAME[self.code]
+    manga: str
+    slug: str
 
     @property
     def id(self) -> str:
-        return f"mangamoins-{self.manga}-{self.chapter}"
+        return f"mangamoins-{self.code}-{self.chapter}"
 
     def __hash__(self) -> int:
         return hash(self.id)
@@ -48,51 +40,20 @@ class MangaMoinsSource(PullSource[Chapter]):
     name = "MangaMoins"
     default_timeout = 1200
 
-    def __init__(self, shared_client: bool = False, timeout: int | None = None):
+    def __init__(self, manga_slugs: list[str], shared_client: bool = False, timeout: int | None = None):
         super().__init__(shared_client=shared_client, timeout=timeout)
         self.cookies: list[dict[str, Any]] = []
         self.user_agent: str | None = None
+        self.manga_slugs = manga_slugs
 
     async def pull(self, last_pull_ctx: LastPullContext | None = None) -> set[Chapter]:
         url = "https://mangamoins.com/"
-        response = await flaresolverr_helper.get(url, "mangamoins", self.client)
-
-        parsed = etree.fromstring(response["response"], parser=etree.HTMLParser())
-        selector = CSSSelector(".sortie")
-        selected = selector(parsed)
-
-        if TYPE_CHECKING:
-            selected = cast(list[Element], selected)
-
-        chapters: set[Chapter] = set()
-        for chapter_div in selected:
-            a_element = chapter_div.find("a")
-            if a_element is None:
-                logger.warning("No <a> element found in chapter_div")
-                continue
-            href = a_element.attrib["href"]
-
-            if TYPE_CHECKING:
-                href = cast(str, href)
-            scan_ref = href.split("=")[1]
-
-            match = SCAN_REF_RE.match(scan_ref)
-            if match is None:
-                logger.warning(f"No match found for scan_ref: {scan_ref}")
-                continue
-
-            code, chapter = match.groups()
-            if code not in CODE2NAME:
-                continue
-
-            chapter_obj = Chapter(code=code, chapter=chapter)
-
-            chapters.add(chapter_obj)
-
-        _log_chapters = "\n - ".join(f"{chapter.manga} #{chapter.chapter}" for chapter in chapters)
-        logger.info(f"Found {len(chapters)} chapters:\n - {_log_chapters}")
-
-        return chapters
+        await self.client.get(url)  # get a cookie
+        print(self.client.cookies)
+        response = await self.client.get(f"{url}api/v1/mangas?limit=5", headers={"Referer": "https://mangamoins.com/"})
+        values = response.json()
+        print(values)
+        return {Chapter(code=manga["mangaSlug"], chapter=manga["chapitre"], manga=manga["title"], slug=manga["slug"]) for manga in values["data"] if manga["mangaSlug"] in self.manga_slugs}
 
     async def post_callback(self):
         await flaresolverr_helper.destroy_session("mangamoins", self.client)
@@ -104,24 +65,23 @@ class MangaMoinsSource(PullSource[Chapter]):
         cookies: dict[str, str] | None = None,
         user_agent: str | None = None,
     ) -> None:
+        print("TODO")
         """
         Download the chapter and save it to a file.
         """
         logger.info(f"Downloading {chapter.manga} #{chapter.chapter} in {path}...")
-        url = f"https://mangamoins.com/download/?scan={chapter.code}{chapter.chapter}"
+        url = f"https://mangamoins.com/api/v1/scan?slug={chapter.slug}"
+        response = await self.client.get(url, headers={"Referer": "https://mangamoins.com"})
+        infos = response.json()
+        page_base_url = infos["pagesBaseUrl"].replace("bztmrkeiyoushi", "")
+        page_number = infos["pageNumbers"]
 
-        client = AsyncClient()
-        if cookies:
-            client.cookies = cookies
-        if user_agent:
-            client.headers["user-agent"] = user_agent
-
-        response = await client.get(url, timeout=60, follow_redirects=True)
-        if response.status_code != 200:
-            raise ValueError(f"Failed to download chapter {chapter}: {response.status_code}")
-
+        # not asyncio but I don't care
         path.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(path, "wb") as f:
-            await f.write(response.content)
+        with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for i in range(page_number):
+                img = await self.client.get(f"{page_base_url}{i+1:02d}.webp")
+                zip_file.writestr(f"{i+1:02d}.webp", img.content)
 
         logger.info(f"{chapter.manga} #{chapter.chapter} downloaded in {path} successfully !")
+

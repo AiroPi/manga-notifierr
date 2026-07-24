@@ -45,17 +45,17 @@ async def on_fmteam_chapter(src: FMTeamSource, chapter: FMTeamChapter):
     await src.download_chapter(chapter, path=path)
 
 
-@media.sub_to(MangaMoinsSource())
+@media.sub_to(MangaMoinsSource(["one_piece"]))
 async def on_mangamoins_chapter(src: MangaMoinsSource, chapter: MangaMoinsChapter):
     pings = {
-        "OP": "1391138368838172682",
+        "one_piece": "1391138368838172682",
     }
 
     print(f"New chapter available: {chapter.manga} - {chapter.chapter}")
     await notify_new_chapter(
         manga=chapter.manga,
         chapter=chapter.chapter,
-        url=f"https://mangamoins.com/?scan={chapter.code}{chapter.chapter}",
+        url=f"https://mangamoins.com/scan/{chapter.slug}",
         extra_pings=pings.get(chapter.code),
     )
 
