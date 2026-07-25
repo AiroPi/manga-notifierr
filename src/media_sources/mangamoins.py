@@ -1,22 +1,17 @@
 from __future__ import annotations
 
-import re
+import zipfile
 from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
-import zipfile
+from typing import TYPE_CHECKING, Any
 
-import aiofiles
-from httpx import AsyncClient
-from lxml import etree
-from lxml.cssselect import CSSSelector
 from mediasub import LastPullContext, PullSource
 
 import flaresolverr_helper
 
 if TYPE_CHECKING:
-    from lxml.etree import _Element as Element  # pyright: ignore[reportPrivateUsage]
+    pass  # pyright: ignore[reportPrivateUsage]
 
 logger = getLogger(__name__)
 
@@ -53,7 +48,11 @@ class MangaMoinsSource(PullSource[Chapter]):
         response = await self.client.get(f"{url}api/v1/mangas?limit=5", headers={"Referer": "https://mangamoins.com/"})
         values = response.json()
         print(values)
-        return {Chapter(code=manga["mangaSlug"], chapter=manga["chapitre"], manga=manga["title"], slug=manga["slug"]) for manga in values["data"] if manga["mangaSlug"] in self.manga_slugs}
+        return {
+            Chapter(code=manga["mangaSlug"], chapter=manga["chapitre"], manga=manga["title"], slug=manga["slug"])
+            for manga in values["data"]
+            if manga["mangaSlug"] in self.manga_slugs
+        }
 
     async def post_callback(self):
         await flaresolverr_helper.destroy_session("mangamoins", self.client)
@@ -78,10 +77,9 @@ class MangaMoinsSource(PullSource[Chapter]):
 
         # not asyncio but I don't care
         path.parent.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for i in range(page_number):
-                img = await self.client.get(f"{page_base_url}{i+1:02d}.webp")
-                zip_file.writestr(f"{i+1:02d}.webp", img.content)
+                img = await self.client.get(f"{page_base_url}{i + 1:02d}.webp")
+                zip_file.writestr(f"{i + 1:02d}.webp", img.content)
 
         logger.info(f"{chapter.manga} #{chapter.chapter} downloaded in {path} successfully !")
-
