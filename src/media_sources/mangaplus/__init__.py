@@ -1,5 +1,6 @@
 # heavily inspired by https://github.com/hurlenko/mloader
 
+import uuid
 from dataclasses import dataclass
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
@@ -37,6 +38,10 @@ class MangaPlusSource(PullSource[Chapter]):
 
     def __init__(self, titles_ids: list[int], shared_client: bool = False, timeout: int | None = None):
         super().__init__(shared_client=shared_client, timeout=timeout)
+        self.client.headers["User-Agent"] = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0"
+        )
+        self.client.headers["Session-Token"] = str(uuid.uuid1())
         self.titles_ids = titles_ids
 
     async def pull(self, last_pull_ctx: LastPullContext | None = None) -> set[Chapter]:
